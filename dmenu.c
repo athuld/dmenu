@@ -159,12 +159,26 @@ drawmenu(void)
 		drw_setscheme(drw, scheme[SchemeSel]);
 		x = drw_text(drw, x, 0, promptw, bh, lrpad / 2, prompt, 0);
 	}
+
+    int maxlen = lines ? (mw - promptw) : (matches ? inputw : mw - (promptw + TEXTW("<") + TEXTW(">")));
+    char ptext[BUFSIZ];
+    char *p;
+
+    memcpy(ptext, text, BUFSIZ);
+    p = ptext;
+
+    while (TEXTW(p) > maxlen) {
+        p++;
+    }
+
+    memmove(ptext, p, strlen(p) + 1);
+
 	/* draw input field */
 	w = (lines > 0 || !matches) ? mw - x : inputw;
 	drw_setscheme(drw, scheme[SchemeNorm]);
-	drw_text(drw, x, 0, w, bh, lrpad / 2, text, 0);
+	drw_text(drw, x, 0, w, bh, lrpad / 2, ptext, 0);
 
-	curpos = TEXTW(text) - TEXTW(&text[cursor]);
+	curpos = TEXTW(ptext) - TEXTW(&ptext[cursor]);
 	if ((curpos += lrpad / 2 - 1) < w) {
 		drw_setscheme(drw, scheme[SchemeNorm]);
 		drw_rect(drw, x + curpos, 2 + (bh - fh) / 2, 2, fh - 4, 1, 0);
@@ -356,17 +370,17 @@ keypress(XKeyEvent *ev)
 		case XK_g: ksym = XK_Escape;    break;
 		case XK_h: ksym = XK_BackSpace; break;
 		case XK_i: ksym = XK_Tab;       break;
-		case XK_j: /* fallthrough */
+		/* case XK_j: /* fallthrough */ 
 		case XK_J: /* fallthrough */
 		case XK_m: /* fallthrough */
 		case XK_M: ksym = XK_Return; ev->state &= ~ControlMask; break;
-		case XK_n: ksym = XK_Down;      break;
-		case XK_p: ksym = XK_Up;        break;
+		case XK_j: ksym = XK_Down;      break;
+		case XK_k: ksym = XK_Up;        break;
 
-		case XK_k: /* delete right */
-			text[cursor] = '\0';
-			match();
-			break;
+		/* case XK_k: /* delete right */ 
+		/* 	text[cursor] = '\0'; */
+		/* 	match(); */
+		/* 	break; */
 		case XK_u: /* delete left */
 			insert(NULL, 0 - cursor);
 			break;
@@ -377,7 +391,7 @@ keypress(XKeyEvent *ev)
 				insert(NULL, nextrune(-1) - cursor);
 			break;
 		case XK_y: /* paste selection */
-		case XK_Y:
+		case XK_V:
 			XConvertSelection(dpy, (ev->state & ShiftMask) ? clip : XA_PRIMARY,
 			                  utf8, utf8, win, CurrentTime);
 			return;
